@@ -1,7 +1,5 @@
 import pandas as pd
 from faker import Faker
-import argparse
-import yaml
 import random
 import os
 import google.generativeai as genai
@@ -11,14 +9,14 @@ try:
     # Configure the Gemini API key from your environment variable
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("⚠️ Warning: GEMINI_API_KEY environment variable not set. 'ai_text' type will be disabled.")
+        print("[!] WARNING: GEMINI_API_KEY environment variable not set. 'ai_text' type will be disabled.")
         gemini_enabled = False
     else:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-1.5-flash')
         gemini_enabled = True
 except Exception as e:
-    print(f"⚠️ Warning: Could not configure Gemini AI. 'ai_text' type will be disabled. Error: {e}")
+    print(f"[!] WARNING: Could not configure Gemini AI. 'ai_text' type will be disabled. Error: {e}")
     gemini_enabled = False
 
 
@@ -33,11 +31,11 @@ def generate_ai_content(prompt: str) -> str:
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        print(f"❌ AI generation failed: {e}")
+        print(f"[!] ERROR: AI generation failed: {e}")
         return "AI_GENERATION_ERROR"
 
 
-# --- This is the core engine for generating different data types ---
+# --- core engine for generating different data types ---
 TYPE_GENERATORS = {
     "name": {"positive": fake.name, "negative": lambda: random.choice(["", "Name123", "A"*201])},
     "email": {"positive": fake.safe_email, "negative": lambda: "not-an-email"},
@@ -45,7 +43,7 @@ TYPE_GENERATORS = {
     "integer": {"positive": fake.random_int, "negative": lambda: random.choice([-1, 999.9, "abc"])},
     "date": {"positive": fake.date, "negative": lambda: "2025-99-99"},
     "uuid": {"positive": fake.uuid4, "negative": lambda: "not-a-uuid"},
-    # Our new AI-powered type. It only has a 'positive' case, as 'negative' is context-dependent.
+    # new AI-powered type. It only has a 'positive' case, as 'negative' is context-dependent.
     "ai_text": {"positive": generate_ai_content, "negative": lambda: "INVALID_AI_PROMPT"},
 }
 
@@ -58,9 +56,9 @@ def get_user_input(prompt, type_converter=str, validation=lambda x: True):
             if validation(value):
                 return value
             else:
-                print("❌ Invalid input, please try again.")
+                print("[!] Invalid input, please try again.")
         except ValueError:
-            print("❌ Invalid input, please enter the correct type.")
+            print("[!] Invalid input, please enter the correct type.")
 
 def build_schema_interactively():
     """Guides the user to build a schema dictionary interactively."""
@@ -88,10 +86,10 @@ def build_schema_interactively():
             if not gemini_enabled:
                 print("Cannot use 'ai_text' as Gemini is not configured. Skipping.")
                 continue
-            ai_prompt = get_user_input("  ➡️ Enter the AI context prompt for this field: ")
+            ai_prompt = get_user_input("  > Enter the AI context prompt for this field: ")
             fields[field_name]['prompt'] = ai_prompt
 
-        print(f"✅ Field '{field_name}' set to type '{field_type}'.")
+        print(f"[+] Field '{field_name}' set to type '{field_type}'.")
 
     return {'fields': fields}
 
@@ -99,7 +97,7 @@ def generate_data(schema, num_rows, test_type):
     """Generates test data based on a schema and test type."""
     fields = schema.get('fields', {})
     data = []
-    print(f"\nGenerating {num_rows} '{test_type}' records...")
+    print(f"\n[*] Generating {num_rows} '{test_type}' records...")
     for i in range(num_rows):
         print(f"  - Generating row {i+1}/{num_rows}")
         record = {}
@@ -140,7 +138,7 @@ def main():
 
     if not df.empty:
         df.to_csv(output_filename, index=False)
-        print(f"\n✅ Success! Data saved to '{output_filename}'")
+        print(f"\n[+] Success! Data saved to '{output_filename}'")
 
 if __name__ == "__main__":
     main()

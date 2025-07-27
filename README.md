@@ -36,8 +36,8 @@ Follow these steps to get the project running on your local machine.
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git)
-cd YOUR_REPO_NAME
+git clone [https://github.com/Amuthan07/AI_Powered_Test_Strategist]
+cd AI_Powered_Test_Strategist
 ```
 
 ### 2. Create a Virtual Environment (Recommended)
