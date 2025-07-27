@@ -14,9 +14,9 @@ try:
         raise ValueError("GEMINI_API_KEY not found in your .env file or environment variables.")
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-1.5-flash')
-    print("✅ Gemini AI configured successfully.")
+    print("[+] Gemini AI configured successfully.")
 except Exception as e:
-    print(f"❌ Failed to configure Gemini AI: {e}")
+    print(f"[!] ERROR: Failed to configure Gemini AI: {e}")
     exit()
 
 def get_user_input(prompt: str) -> str:
@@ -25,11 +25,11 @@ def get_user_input(prompt: str) -> str:
         value = input(prompt).strip()
         if value:
             return value
-        print("Input cannot be empty. Please try again.")
+        print("[!] Input cannot be empty. Please try again.")
 
 def generate_test_plan(requirement: str) -> dict:
     """Uses AI to generate a structured test plan."""
-    print("\n🧠 Generating test plan from your requirement...")
+    print("\n[*] Generating test plan from your requirement...")
     prompt = f"""
     As an expert QA Test Analyst, analyze the following user requirement and generate a structured test plan in JSON format.
     User Requirement: "{requirement}"
@@ -39,15 +39,15 @@ def generate_test_plan(requirement: str) -> dict:
         response = model.generate_content(prompt)
         json_text = response.text.strip().replace("```json", "").replace("```", "")
         plan = json.loads(json_text)
-        print(f"✅ Test plan generated with {len(plan['scenarios'])} scenarios.")
+        print(f"[+] Test plan generated with {len(plan['scenarios'])} scenarios.")
         return plan
     except Exception as e:
-        print(f"❌ Failed to generate or parse test plan: {e}")
+        print(f"[!] ERROR: Failed to generate or parse test plan: {e}")
         return None
 
 def get_ideal_row_count(plan: dict) -> int:
     """Uses AI to determine the ideal number of rows to generate."""
-    print("\n🧠 Analyzing test plan to determine ideal row count...")
+    print("\n[*] Analyzing test plan to determine ideal row count...")
     prompt = f"""
     As a QA Lead, analyze the following test plan. Based on the number and variety of scenarios, determine the ideal number of test data rows to generate PER SCENARIO to achieve good test coverage without being excessive.
 
@@ -59,15 +59,15 @@ def get_ideal_row_count(plan: dict) -> int:
     try:
         response = model.generate_content(prompt)
         ideal_count = int(response.text.strip())
-        print(f"💡 AI suggests generating {ideal_count} rows per scenario.")
+        print(f"[*] AI suggests generating {ideal_count} rows per scenario.")
         return ideal_count
     except Exception as e:
-        print(f"    ⚠️ Could not determine ideal row count, defaulting to 3. Error: {e}")
+        print(f"    [!] WARNING: Could not determine ideal row count, defaulting to 3. Error: {e}")
         return 3 # Fallback to a sensible default
 
 def generate_data_for_plan(plan: dict, rows_per_scenario: int) -> pd.DataFrame:
     """Generates test data for each scenario in the test plan."""
-    print("\n🤖 Generating test data for each scenario...")
+    print("\n[*] Generating test data for each scenario...")
     all_test_data = []
     fields = plan.get("fields", [])
 
@@ -93,9 +93,9 @@ def generate_data_for_plan(plan: dict, rows_per_scenario: int) -> pd.DataFrame:
                 row['test_type'] = test_type
             all_test_data.extend(generated_rows)
         except Exception as e:
-            print(f"    ⚠️ Could not generate data for '{scenario_name}': {e}")
+            print(f"    [!] WARNING: Could not generate data for '{scenario_name}': {e}")
     
-    print("✅ Test data generation complete.")
+    print("[+] Test data generation complete.")
     return pd.DataFrame(all_test_data)
 
 def main():
@@ -114,7 +114,7 @@ def main():
         try:
             rows_per_scenario = int(rows_input)
         except ValueError:
-            print("Invalid number, defaulting to 3.")
+            print("[!] Invalid number, defaulting to 3.")
             rows_per_scenario = 3
 
     output_filename = get_user_input("Enter a base name for the output CSV file: ")
@@ -124,20 +124,18 @@ def main():
     df = generate_data_for_plan(test_plan, rows_per_scenario)
 
     if not df.empty:
-        # --- NEW CODE BLOCK ---
         # 1. Save the complete file with scenario metadata
         full_report_filename = output_filename.replace('.csv', '_full_report.csv')
         cols_to_move = ['scenario_name', 'test_type']
         df_full = df[cols_to_move + [col for col in df.columns if col not in cols_to_move]]
         df_full.to_csv(full_report_filename, index=False)
-        print(f"\n✅ Full report with scenarios saved to '{full_report_filename}'")
+        print(f"\n[+] Full report with scenarios saved to '{full_report_filename}'")
 
         # 2. Save the "data only" file for automation tools
         data_only_filename = output_filename.replace('.csv', '_data_only.csv')
         data_only_df = df.drop(columns=cols_to_move)
         data_only_df.to_csv(data_only_filename, index=False)
-        print(f"✅ Clean data for automation saved to '{data_only_filename}'")
-        # --- END OF NEW CODE BLOCK ---
+        print(f"[+] Clean data for automation saved to '{data_only_filename}'")
 
 if __name__ == "__main__":
     main()
